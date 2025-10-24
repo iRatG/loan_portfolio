@@ -27,7 +27,7 @@ chmod +x start_all.sh
 
 | Главная | Дашборд | AI‑агент |
 |---|---|---|
-| (скрин) | (скрин) | (скрин) |
+| (скрин) | ![Выдачи](docs/img/plot_amount_sum.png) | ![PAR](docs/img/risk_plot_par.png) |
 
 ### Пошаговый запуск
 
