@@ -190,4 +190,143 @@ def apply_fact_oper(loan, month, migration_matrix, season_ref, macro_ref, noise_
 **Дата:** 24 октября 2025 г.  
 **Версия:** 1.0
 
-Если нужен детализированный блок или развёрнутый формат примера реализации на Python/SQL — уточни, какой именно процесс расписать первым!
+Отлично, фокусируемся на **реалистичной эмуляции балансов и просрочки по кредиту** с учетом полной детализации структуры платежей!  
+Расписываю подробную модель и алгоритм для второго модуля: расчет основной суммы, процентов, просрочек, аннуитетного графика для каждого месяца.
+
+***
+
+# ТЗ к Эмуляция операционного факта кредита
+
+***
+
+## 1. Цели расчёта
+
+- Для каждого кредита ежемесячно учитывать:
+  - Остаток основного долга (balance_principal)
+  - Просроченную сумму по основному долгу (overdue_principal)
+  - Сумму процентов к уплате за месяц (interest_scheduled)
+  - Просроченную сумму процентов (overdue_interest)
+  - Ануитентный платеж (scheduled_payment)
+  - Фактический внесённый платеж (actual_payment)
+- Эмулировать реализм: частичные, полные платежи, неплатежи и их последствия по bucket DPD
+
+***
+
+## 2. Словарь/структура для кредитного факта
+
+| Поле               | Тип         | Описание                      |
+|--------------------|-------------|-------------------------------|
+| loan_id            | bigint      | Уникальный идентификатор      |
+| period_month       | date        | Конец месяца                  |
+| MOB                | int         | Months on Book                |
+| balance_principal  | decimal     | Остаток основного долга       |
+| overdue_principal  | decimal     | Просроченный основной долг     |
+| interest_scheduled | decimal     | Насчитанные проценты за месяц |
+| overdue_interest   | decimal     | Просроченные проценты         |
+| scheduled_payment  | decimal     | Ануитентный платеж            |
+| actual_payment     | decimal     | Фактический платеж            |
+| DPD_bucket         | varchar(16) | "0", "1-30", "31-60", ...     |
+| overdue_days       | int         | Просроч. дней                 |
+| status             | varchar     | active, default, repaid       |
+| macro_rate_cbr     | decimal(5,2)| Ставка ЦБ на период           |
+| season_factor      | decimal(5,2)| Коэф. сезонности              |
+
+***
+
+## 3. Формулы расчёта платежей и балансов
+
+### 3.1 Ануитентный платеж
+
+$$
+ScheduledPayment = P \cdot \frac{r \cdot (1 + r)^n}{(1 + r)^n - 1}
+$$
+где  
+- $$ P $$ — остаток основного долга (или изначальный),
+- $$ r $$ — месячная процентная ставка ($$ r = rate_{annual}/12 $$),
+- $$ n $$ — оставшийся срок (месяцев).
+
+### 3.2 Расчёт процентов к уплате
+
+$$
+InterestScheduled = BalancePrincipal_{prev} \times r
+$$
+
+### 3.3 Остаток и просрочка
+
+- Если платёж не поступил, вся сумма переносится в просрочку:
+    - $$ overdue\_principal $$ += principal portion
+    - $$ overdue\_interest $$ += interest portion
+- Если частичный платёж — погашается сначала всё по процентам, потом по основному долгу.
+
+### 3.4 Фактический платеж
+
+- Фактический платёж разыгрывается сценарно (см. матрица миграций, шум, сезон).
+- Если платежа нет, статус "просрочка".
+- Если сумма >= scheduled_payment + просрочки — статус "repaid" по bucket.
+
+***
+
+## 4. Алгоритм по кредиту (цикл по месяцам)
+
+1. На начало периода:
+    - Вычислить scheduled_payment по аннуитетной формуле.
+    - Насчитать InterestScheduled.
+2. Определить actual_payment (по правилам/шуму/сезону).
+3. Декомпозировать actual_payment:
+    - Полная сумма: сначала покрывает накопленные просроченные проценты, потом текущие, потом просроченный основной долг, потом по текущему основному.
+4. Обновить просроченные суммы:
+    - Всё, что не погашено, остаётся в overdue.
+5. Пересчитать balance_principal:
+    - Если платёж по основному долгу внесён — вычесть.
+6. Перевести в DPD_bucket:
+    - По overdue_days и наличию непогашенных просрочек.
+7. Зафиксировать строку факта.
+
+***
+
+## 5. Пример Python-функции
+
+```python
+def calculate_annuity_payment(P, r_annual, n):
+    r_month = r_annual / 12
+    if r_month == 0:
+        return P / n
+    return P * (r_month * (1 + r_month)**n) / ((1 + r_month)**n - 1)
+
+def allocate_payment(actual_payment, overdue_interest, interest_scheduled, overdue_principal, scheduled_principal):
+    pay_left = actual_payment
+    # Сначала проценты
+    paid_oi = min(pay_left, overdue_interest)
+    pay_left -= paid_oi
+    paid_is = min(pay_left, interest_scheduled)
+    pay_left -= paid_is
+    # Потом основной долг
+    paid_op = min(pay_left, overdue_principal)
+    pay_left -= paid_op
+    paid_sp = min(pay_left, scheduled_principal)
+    pay_left -= paid_sp
+    return paid_oi, paid_is, paid_op, paid_sp
+```
+
+***
+
+## 6. Порядок расчёта за месяц
+
+- На каждого активного кредита:
+    1. Calculate scheduled_payment, interest_scheduled
+    2. Simulate actual_payment
+    3. Allocate payment по overdue/текущим (см. выше)
+    4. Update balances, overdue sums
+    5. Assign DPD_bucket (по days overdue)
+    6. Update status (active, default, repaid)
+    7. Сохранить результаты за месяц в таблицу
+
+***
+
+## 7. Проверка реалистичности результата
+
+- Диапазоны overdue процентов и principal не должны быть слишком большими — сверять с реальной статистикой (70% портфеля всегда платит вовремя)
+- В кризисные (2014–2015) просрочки растут, больше кредитов остаётся в bucket 1–30, дефолт jump выше из-за снижения платежных дисциплин
+
+***
+

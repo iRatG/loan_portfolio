@@ -1,21 +1,41 @@
-*.db
-logs/
+# OS / Editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.code-workspace
+
+# Python
 __pycache__/
 *.pyc
-.venv/
-.env
-*.log
-*.sqlite
-*.sqlite3
-.DS_Store
-build/
-dist/
+*.pyo
+*.pyd
 *.egg-info/
-.ipynb_checkpoints/
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-.vscode/
-.idea/
-*.bak
-*.tmp
+.eggs/
+.venv/
+venv/
+.env
+.env.local
+*.sqlite3
+
+# Logs and artifacts
+logs/
+*.log
+*.jsonl
+reports/
+outputs/
+
+aisql_cache/
+.streamlit/
+
+# Node / web (if any)
+node_modules/
+dist/
+build/
+
+# Data (keep DB file, ignore large dumps)
+# credit_sim.db — оставляем в проекте
+*.db.dump
+
+# Streamlit
+**/.streamlit/**

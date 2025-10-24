@@ -1,0 +1,32 @@
+# Core dependencies
+python-dotenv==1.0.0
+pydantic==2.5.0
+
+# LangChain и AI
+langchain==0.1.0
+langchain-community==0.0.10
+langchain-openai==0.0.2
+langchain-anthropic==0.1.1
+langchain-experimental==0.0.47
+
+# OpenAI и Anthropic
+openai==1.7.2
+anthropic==0.8.1
+tiktoken==0.5.2
+
+# Database
+SQLAlchemy==2.0.32
+
+# Vector store (опционально)
+chromadb==0.4.22
+
+# Data processing
+pandas==2.0.3
+numpy==1.24.4
+
+# Utilities
+colorama==0.4.6
+
+# Streamlit UI
+streamlit==1.29.0
+

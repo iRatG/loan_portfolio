@@ -412,11 +412,32 @@ def build_app(conn: str, cfg_path: Path) -> dash.Dash:
         dcc.Tab(label="Quarterly", children=[html.P(tab_desc["Quarterly"])] + quarterly_children),
     ])
 
+    # Навигационная панель
+    navbar = html.Div([
+        html.Div([
+            html.H1("📊 NCL Analytics Platform", style={"margin": 0, "color": "#2d3748", "fontSize": "24px"}),
+            html.P("Дашборд аналитики и отчетности", style={"margin": "5px 0", "color": "#718096", "fontSize": "14px"}),
+        ], style={"flex": 1}),
+        html.Div([
+            html.A("🏠 Главная", href="http://localhost:8000", style={"padding": "8px 16px", "margin": "0 10px", "background": "#667eea",
+                          "color": "white", "borderRadius": "8px", "textDecoration": "none",
+                          "display": "inline-block", "fontWeight": "600", "fontSize": "14px"}),
+            html.A("🤖 AI-агент", href="http://localhost:8501", style={"padding": "8px 16px", "background": "#38a169",
+                          "color": "white", "borderRadius": "8px", "textDecoration": "none",
+                          "display": "inline-block", "fontWeight": "600", "fontSize": "14px"}),
+        ], style={"display": "flex", "alignItems": "center"}),
+    ], style={"display": "flex", "justifyContent": "space-between", "alignItems": "center",
+              "padding": "20px 40px", "background": "white", "boxShadow": "0 2px 4px rgba(0,0,0,0.1)",
+              "marginBottom": "20px"})
+    
     app.layout = html.Div([
-        html.H1("Risk Dashboard (Read-only)"),
-        html.P("Просмотр конфигурации, описаний параметров и ключевых риск-метрик портфеля за 2010–2015."),
-        tabs
-    ], style={"margin":"20px"})
+        navbar,
+        html.Div([
+            html.H2("Risk Dashboard (Read-only)", style={"margin": "20px 0 10px 0"}),
+            html.P("Просмотр конфигурации, описаний параметров и ключевых риск-метрик портфеля за 2010–2015."),
+            tabs
+        ], style={"margin":"20px"})
+    ])
 
     return app
 
