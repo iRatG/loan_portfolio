@@ -1,0 +1,12 @@
+{
+  "noise": {
+    "tech_delay_prob": 0.03,
+    "jump_to_delinquency_prob": 0.01,
+    "full_early_repay_prob": 0.02,
+    "partial_repay_prob": 0.05,
+    "tech_delay_days": [3, 7],
+    "shock_multiplier": 2.0
+  }
+}
+
+

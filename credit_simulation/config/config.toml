@@ -1,0 +1,74 @@
+[simulation]
+start_year = 2010
+end_year = 2015
+base_monthly_issuance = 1000
+random_seed = 12345
+
+[loan_parameters]
+min_amount = 50000
+max_amount = 2000000
+avg_amount = 500000
+min_term_months = 12
+max_term_months = 60
+avg_term_months = 36
+
+[sensitivity]
+alpha_rate = 0.08
+beta_employment = 0.12
+gamma_macro = 0.05
+
+[collections]
+bucket_priority = "max"           # fact|max|intent
+dpd_mode = "age_oldest"           # age_oldest|cap_to_bucket
+escalation_after_n_missed_principal = 3
+p_cure_by_bucket = {"1-30"=0.25, "31-60"=0.15, "61-90"=0.08, "90+"=0.04}
+typical_cure_multiple = 1.5        # множитель от scheduled_payment
+intent_worsen_multiplier_2014_2015 = 0.85  # ослабить ухудшения в 2014–2015
+
+[collections.payment_policy_by_bucket]
+"0" = [1.0, 1.0, 1.0, 1.0]
+"1-30" = [1.0, 1.0, 0.25, 0.0]
+"31-60" = [1.0, 0.5, 0.2, 0.0]
+"61-90" = [0.5, 0.0, 0.1, 0.0]
+"90+" = [0.0, 0.0, 0.0, 0.0]
+
+[database]
+# SQLite file in project root
+connection_string = "sqlite:///credit_sim.db"
+table_name = "loan_issue"
+
+[descriptions]
+
+[descriptions.simulation]
+start_year = "Начальный год симуляции (включительно)."
+end_year = "Конечный год симуляции (включительно)."
+base_monthly_issuance = "Базовое кол-во выдач в месяц до поправок."
+random_seed = "Фиксирует случайность для воспроизводимости."
+
+[descriptions.loan_parameters]
+min_amount = "Минимальная сумма кредита."
+max_amount = "Максимальная сумма кредита."
+avg_amount = "Средняя сумма кредита (ожидание)."
+min_term_months = "Минимальный срок кредита в месяцах."
+max_term_months = "Максимальный срок кредита в месяцах."
+avg_term_months = "Средний срок кредита (ожидание)."
+
+[descriptions.sensitivity]
+alpha_rate = "Чувствительность объёма выдач к ключевой ставке ЦБ."
+beta_employment = "Чувствительность к занятости."
+gamma_macro = "Чувствительность к макро-индексу."
+
+[descriptions.collections]
+bucket_priority = "Приоритет финального бакета: fact|max|intent."
+dpd_mode = "Счётчик просрочки: age_oldest/ cap_to_bucket."
+escalation_after_n_missed_principal = "Форс-эскалация после N месяцев без гашения тела."
+p_cure_by_bucket = "Вероятность полного восстановления (cure) по бакетам."
+typical_cure_multiple = "Размер сверхплатежа для cure (в долях от аннуитета)."
+intent_worsen_multiplier_2014_2015 = "Ослабление ухудшений в 2014–2015 (множитель)."
+
+[descriptions.collections.payment_policy_by_bucket]
+"0" = "Доли оплаты: проср. проценты, текущие проценты, проср. тело, текущее тело (в таком порядке)."
+"1-30" = "Поведение в бакете 1–30."
+"31-60" = "Поведение в бакете 31–60."
+"61-90" = "Поведение в бакете 61–90."
+"90+" = "Поведение в бакете 90+."

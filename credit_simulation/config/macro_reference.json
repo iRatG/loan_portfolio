@@ -1,0 +1,10 @@
+{
+  "macro_data": [
+    { "year": 2010, "month": 1, "rate_cbr": 7.75, "employment_rate": 92.7, "unemployment_rate": 7.3, "macro_index": 1.00, "source": "ЦБ РФ, Росстат" },
+    { "year": 2011, "month": 1, "rate_cbr": 8.00, "employment_rate": 93.5, "unemployment_rate": 6.5, "macro_index": 1.02, "source": "ЦБ РФ, Росстат" },
+    { "year": 2012, "month": 1, "rate_cbr": 8.25, "employment_rate": 94.5, "unemployment_rate": 5.5, "macro_index": 1.05, "source": "ЦБ РФ, Росстат" },
+    { "year": 2013, "month": 1, "rate_cbr": 8.25, "employment_rate": 94.5, "unemployment_rate": 5.5, "macro_index": 1.03, "source": "ЦБ РФ, Росстат" },
+    { "year": 2014, "month": 1, "rate_cbr": 17.00, "employment_rate": 94.8, "unemployment_rate": 5.2, "macro_index": 0.85, "source": "ЦБ РФ, Росстат" },
+    { "year": 2015, "month": 1, "rate_cbr": 11.00, "employment_rate": 94.4, "unemployment_rate": 5.6, "macro_index": 0.90, "source": "ЦБ РФ, Росстат" }
+  ]
+}

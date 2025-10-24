@@ -1,0 +1,422 @@
+# ТЕХНИЧЕСКОЕ ЗАДАНИЕ
+
+## МОДУЛЬ 1: «ГЕНЕРАЦИЯ КРЕДИТНЫХ ВЫДАЧ» (Credit Issuance Generation Module)
+
+### v1.0 | Октябрь 2025
+
+***
+
+## 1. ОБЩИЕ СВЕДЕНИЯ
+
+### 1.1 Назначение системы
+Модуль предназначен для генерации синтетических данных по выдачам кредитов для банковского портфеля в период с января 2010 по декабрь 2015 года с учётом макроэкономических факторов и сезонной динамики.
+
+### 1.2 Цели создания
+- Создание реалистичного потока кредитных выдач для обучения и тестирования NCL-модели
+- Моделирование влияния макроэкономических параметров на кредитную активность
+- Обеспечение основы для последующего применения матрицы миграций
+
+### 1.3 Область применения
+- Прототип системы риск-менеджмента
+- Академические исследования в области кредитного риска
+- Тестирование и валидация методологий расчёта Cost of Risk
+
+***
+
+## 2. ТРЕБОВАНИЯ К СИСТЕМЕ
+
+### 2.1 Функциональные требования
+
+#### 2.1.1 Основные функции
+1. **Генерация ежемесячных выдач** с учётом макроэкономических параметров
+2. **Применение сезонных коэффициентов** к объёмам и характеристикам выдач
+3. **Создание уникальных кредитных договоров** с реалистичными параметрами
+4. **Сохранение данных** в структурированном виде для дальнейшего анализа
+
+#### 2.1.2 Входные данные
+- Справочник макроэкономических показателей (JSON)
+- Справочник сезонных коэффициентов (JSON)
+- Конфигурационные параметры симуляции (TOML)
+
+#### 2.1.3 Выходные данные
+- Таблица выдач кредитов (loan_issue) в SQL-базе
+- Логи генерации и контрольные суммы
+
+***
+
+## 3. СПРАВОЧНИКИ И КОНФИГУРАЦИЯ
+
+### 3.1 Макроэкономические справочники
+
+#### 3.1.1 Структура macro_reference.json
+```json
+{
+  "macro_data": [
+    {
+      "year": 2010,
+      "month": 1,
+      "rate_cbr": 7.75,
+      "employment_rate": 92.7,
+      "unemployment_rate": 7.3,
+      "macro_index": 1.00,
+      "source": "ЦБ РФ, Росстат"
+    },
+    {
+      "year": 2010,
+      "month": 2,
+      "rate_cbr": 7.75,
+      "employment_rate": 92.7,
+      "unemployment_rate": 7.3,
+      "macro_index": 1.00,
+      "source": "ЦБ РФ, Росстат"
+    }
+  ]
+}
+```
+
+#### 3.1.2 Полный набор данных по годам
+| Год | Ключевая ставка ЦБ | Занятость (%) | Безработица (%) | Макро-индекс |
+|-----|-------------------|---------------|-----------------|--------------|
+| 2010 | 7.75 | 92.7 | 7.3 | 1.00 |
+| 2011 | 8.00 | 93.5 | 6.5 | 1.02 |
+| 2012 | 8.25 | 94.5 | 5.5 | 1.05 |
+| 2013 | 8.25 | 94.5 | 5.5 | 1.03 |
+| 2014 | 17.00 | 94.8 | 5.2 | 0.85 |
+| 2015 | 11.00 | 94.4 | 5.6 | 0.90 |
+
+### 3.2 Справочник сезонности
+
+#### 3.2.1 Структура season_reference.json
+```json
+{
+  "seasonal_coefficients": [
+    {
+      "period_name": "Новогодний спад",
+      "start_month": 1,
+      "start_day": 1,
+      "end_month": 2,
+      "end_day": 15,
+      "k_issue": 0.7,
+      "k_amount": 0.9,
+      "description": "Снижение выдач после праздников"
+    },
+    {
+      "period_name": "Весенняя активность",
+      "start_month": 2,
+      "start_day": 16,
+      "end_month": 4,
+      "end_day": 30,
+      "k_issue": 1.2,
+      "k_amount": 1.1,
+      "description": "Рост кредитной активности"
+    },
+    {
+      "period_name": "Летний период",
+      "start_month": 5,
+      "start_day": 1,
+      "end_month": 8,
+      "end_day": 31,
+      "k_issue": 0.9,
+      "k_amount": 1.0,
+      "description": "Отпускной период"
+    },
+    {
+      "period_name": "Осенняя стабилизация",
+      "start_month": 9,
+      "start_day": 1,
+      "end_month": 10,
+      "end_day": 31,
+      "k_issue": 1.0,
+      "k_amount": 1.0,
+      "description": "Стандартный период"
+    },
+    {
+      "period_name": "Предновогодний рост",
+      "start_month": 11,
+      "start_day": 1,
+      "end_month": 12,
+      "end_day": 31,
+      "k_issue": 1.4,
+      "k_amount": 1.2,
+      "description": "Рост выдач перед НГ"
+    }
+  ]
+}
+```
+
+### 3.3 Конфигурация симуляции
+
+#### 3.3.1 Структура config.toml
+```toml
+[simulation]
+start_year = 2010
+end_year = 2015
+base_monthly_issuance = 1000
+random_seed = 12345
+
+[loan_parameters]
+min_amount = 50000
+max_amount = 2000000
+avg_amount = 500000
+min_term_months = 12
+max_term_months = 60
+avg_term_months = 36
+
+[sensitivity]
+alpha_rate = 0.08  # Чувствительность к ставке ЦБ
+beta_employment = 0.12  # Чувствительность к занятости
+gamma_macro = 0.05  # Чувствительность к макро-индексу
+
+[database]
+connection_string = "postgresql://user:pass@localhost:5432/credit_sim"
+table_name = "loan_issue"
+```
+
+***
+
+## 4. МАТЕМАТИЧЕСКИЕ ФОРМУЛЫ
+
+### 4.1 Расчёт количества выдач
+
+#### 4.1.1 Базовая формула
+```
+N_issuance(t) = N_base × K_macro(t) × K_seasonal(t) × K_random(t)
+```
+
+где:
+- `N_base` — базовое количество выдач в месяц (из config)
+- `K_macro(t)` — макроэкономический коэффициент
+- `K_seasonal(t)` — сезонный коэффициент
+- `K_random(t)` — случайная компонента (0.9-1.1)
+
+#### 4.1.2 Макроэкономический коэффициент
+```
+K_macro(t) = (1 - α_rate × (rate_cbr(t) - 8.0) / 8.0) × 
+             (1 + β_employment × (employment_rate(t) - 94.0) / 94.0) × 
+             macro_index(t)
+```
+
+где:
+- `α_rate = 0.08` — коэффициент чувствительности к ставке ЦБ
+- `β_employment = 0.12` — коэффициент чувствительности к занятости
+- `8.0` — нормализующая ставка ЦБ (%)
+- `94.0` — нормализующий уровень занятости (%)
+
+### 4.2 Расчёт параметров кредитов
+
+#### 4.2.1 Сумма кредита
+```
+Amount_i = Amount_avg × (1 + Normal(0, 0.3)) × K_seasonal_amount(t)
+```
+
+#### 4.2.2 Процентная ставка
+```
+Rate_i = rate_cbr(t) + margin_base + Normal(0, 0.02)
+```
+
+где `margin_base = 0.05` (5% базовая маржа)
+
+#### 4.2.3 Срок кредита
+```
+Term_i = round(Term_avg × (1 + Normal(0, 0.2)))  # в месяцах
+```
+
+***
+
+## 5. СТРУКТУРА БАЗЫ ДАННЫХ
+
+### 5.1 Основная таблица loan_issue
+
+```sql
+CREATE TABLE loan_issue (
+    loan_id BIGSERIAL PRIMARY KEY,
+    issue_date DATE NOT NULL,
+    cohort_month DATE NOT NULL,
+    loan_amount DECIMAL(15,2) NOT NULL,
+    interest_rate DECIMAL(5,2) NOT NULL,
+    term_months INTEGER NOT NULL,
+    product_type VARCHAR(50) DEFAULT 'consumer_loan',
+    
+    -- Макроэкономические параметры на дату выдачи
+    macro_rate_cbr DECIMAL(5,2) NOT NULL,
+    macro_employment_rate DECIMAL(5,2) NOT NULL,
+    macro_unemployment_rate DECIMAL(5,2) NOT NULL,
+    macro_index DECIMAL(5,2) NOT NULL,
+    
+    -- Сезонные коэффициенты
+    season_k_issue DECIMAL(4,2) NOT NULL,
+    season_k_amount DECIMAL(4,2) NOT NULL,
+    season_period_name VARCHAR(100),
+    
+    -- Служебные поля
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    batch_id VARCHAR(50),
+    
+    -- Индексы
+    INDEX idx_issue_date (issue_date),
+    INDEX idx_cohort_month (cohort_month),
+    INDEX idx_batch_id (batch_id)
+);
+```
+
+### 5.2 Справочная таблица macro_params_log
+
+```sql
+CREATE TABLE macro_params_log (
+    id SERIAL PRIMARY KEY,
+    year_month DATE NOT NULL,
+    rate_cbr DECIMAL(5,2),
+    employment_rate DECIMAL(5,2),
+    unemployment_rate DECIMAL(5,2),
+    macro_index DECIMAL(5,2),
+    k_macro_calculated DECIMAL(6,4),
+    source VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    UNIQUE KEY idx_year_month (year_month)
+);
+```
+
+***
+
+## 6. АЛГОРИТМ РАБОТЫ МОДУЛЯ
+
+### 6.1 Последовательность выполнения
+
+1. **Инициализация**
+   - Загрузка конфигурации из config.toml
+   - Загрузка справочников macro_reference.json и season_reference.json
+   - Подключение к базе данных
+
+2. **Основной цикл по месяцам** (январь 2010 → декабрь 2015)
+   ```python
+   for year in range(2010, 2016):
+       for month in range(1, 13):
+           # Получение макропараметров
+           macro_params = get_macro_params(year, month)
+           
+           # Получение сезонных коэффициентов
+           seasonal_params = get_seasonal_params(month)
+           
+           # Расчёт количества выдач
+           n_loans = calculate_monthly_issuance(macro_params, seasonal_params)
+           
+           # Генерация кредитов
+           loans = generate_loans(n_loans, macro_params, seasonal_params, year, month)
+           
+           # Сохранение в БД
+           save_loans_to_db(loans)
+   ```
+
+3. **Генерация отдельного кредита**
+   ```python
+   def generate_loan(macro_params, seasonal_params, issue_date):
+       loan = {
+           'loan_id': generate_unique_id(),
+           'issue_date': issue_date,
+           'cohort_month': first_day_of_month(issue_date),
+           'loan_amount': calculate_loan_amount(seasonal_params),
+           'interest_rate': calculate_interest_rate(macro_params),
+           'term_months': calculate_term_months(),
+           'macro_rate_cbr': macro_params['rate_cbr'],
+           # ... остальные поля
+       }
+       return loan
+   ```
+
+4. **Сохранение и контроль**
+   - Валидация сгенерированных данных
+   - Batch-вставка в базу данных
+   - Логирование статистики и ошибок
+
+### 6.2 Контрольные проверки
+
+1. **Объёмы выдач по месяцам** должны быть в диапазоне 500-2000 кредитов
+2. **Средняя сумма кредита** должна быть 400,000-600,000 рублей
+3. **Сезонные пики** должны приходиться на ноябрь-декабрь
+4. **Макроэкономические спады** должны отражаться в 2014-2015 гг.
+
+***
+
+## 7. ТЕХНИЧЕСКИЕ ТРЕБОВАНИЯ
+
+### 7.1 Программная платформа
+- **Язык разработки:** Python 3.9+
+- **База данных:** PostgreSQL 12+ или SQLite 3+
+- **Библиотеки:** pandas, numpy, sqlalchemy, psycopg2, toml
+
+### 7.2 Производительность
+- **Время генерации:** не более 10 минут для полного периода 2010-2015
+- **Объём данных:** ~70,000-80,000 записей за весь период
+- **Потребление памяти:** не более 1 ГБ
+
+### 7.3 Структура проекта
+```
+credit_simulation/
+├── config/
+│   ├── config.toml
+│   ├── macro_reference.json
+│   └── season_reference.json
+├── src/
+│   ├── __init__.py
+│   ├── main.py
+│   ├── generators/
+│   │   ├── __init__.py
+│   │   ├── loan_generator.py
+│   │   └── macro_calculator.py
+│   ├── database/
+│   │   ├── __init__.py
+│   │   ├── connection.py
+│   │   └── models.py
+│   └── utils/
+│       ├── __init__.py
+│       ├── config_loader.py
+│       └── validators.py
+├── sql/
+│   └── create_tables.sql
+├── logs/
+├── tests/
+└── requirements.txt
+```
+
+***
+
+## 8. РЕЗУЛЬТАТЫ И ВАЛИДАЦИЯ
+
+### 8.1 Ожидаемые выходные данные
+- **Таблица loan_issue** с ~75,000 записей
+- **Файл отчёта** generation_report.json с статистикой
+- **Лог-файл** с детализацией процесса генерации
+
+### 8.2 Критерии приёмки
+1. Все записи имеют валидные значения всех полей
+2. Распределение выдач по месяцам соответствует макроэкономической логике
+3. Сезонные пики и спады читаются в данных
+4. Корреляция между ставкой ЦБ и количеством выдач отрицательная
+5. Время выполнения не превышает установленных лимитов
+
+---
+
+## 9. ДОПОЛНИТЕЛЬНЫЕ ТРЕБОВАНИЯ
+
+### 9.1 Логирование
+- Все операции логируются в файл с ротацией
+- Уровни логирования: DEBUG, INFO, WARNING, ERROR
+- Формат: `YYYY-MM-DD HH:MM:SS [LEVEL] message`
+
+### 9.2 Обработка ошибок
+- Graceful обработка ошибок подключения к БД
+- Валидация входных данных из JSON/TOML файлов
+- Rollback при критических ошибках
+
+### 9.3 Тестирование
+- Unit-тесты для всех основных функций
+- Integration-тесты для полного цикла генерации
+- Покрытие тестами не менее 80%
+
+---
+
+**Документ подготовлен:** Системный аналитик  
+**Дата:** 16 октября 2025 г.  
+**Версия:** 1.0
+

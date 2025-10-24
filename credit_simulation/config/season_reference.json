@@ -1,0 +1,54 @@
+{
+  "seasonal_coefficients": [
+    {
+      "period_name": "Новогодний спад",
+      "start_month": 1,
+      "start_day": 1,
+      "end_month": 2,
+      "end_day": 15,
+      "k_issue": 0.7,
+      "k_amount": 0.9,
+      "description": "Снижение выдач после праздников"
+    },
+    {
+      "period_name": "Весенняя активность",
+      "start_month": 2,
+      "start_day": 16,
+      "end_month": 4,
+      "end_day": 30,
+      "k_issue": 1.2,
+      "k_amount": 1.1,
+      "description": "Рост кредитной активности"
+    },
+    {
+      "period_name": "Летний период",
+      "start_month": 5,
+      "start_day": 1,
+      "end_month": 8,
+      "end_day": 31,
+      "k_issue": 0.9,
+      "k_amount": 1.0,
+      "description": "Отпускной период"
+    },
+    {
+      "period_name": "Осенняя стабилизация",
+      "start_month": 9,
+      "start_day": 1,
+      "end_month": 10,
+      "end_day": 31,
+      "k_issue": 1.0,
+      "k_amount": 1.0,
+      "description": "Стандартный период"
+    },
+    {
+      "period_name": "Предновогодний рост",
+      "start_month": 11,
+      "start_day": 1,
+      "end_month": 12,
+      "end_day": 31,
+      "k_issue": 1.4,
+      "k_amount": 1.2,
+      "description": "Рост выдач перед НГ"
+    }
+  ]
+}
