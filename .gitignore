@@ -33,8 +33,8 @@ node_modules/
 dist/
 build/
 
-# Data (keep DB file, ignore large dumps)
-# credit_sim.db — оставляем в проекте
+# Data (do not commit local databases)
+credit_sim.db
 *.db.dump
 
 # Streamlit
